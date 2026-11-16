@@ -1,0 +1,13 @@
+laravel: '@testbench'
+
+providers:
+  - ImranDevBD\RoleMatrix\RoleMatrixServiceProvider
+  - Workbench\App\Providers\WorkbenchServiceProvider
+
+workbench:
+  start: /admin
+  install: true
+  welcome: false
+  build: []
+  assets: []
+  sync: []

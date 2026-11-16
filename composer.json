@@ -1,0 +1,84 @@
+{
+    "name": "imrandevbd/laravel-role-matrix",
+    "description": "Premium role and permission management for Laravel, with a Role × Module × Action matrix.",
+    "keywords": [
+        "laravel",
+        "roles",
+        "permissions",
+        "rbac",
+        "abac",
+        "filament",
+        "authorization"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Imran Ahmed",
+            "email": "me@imrandev.bd",
+            "homepage": "https://github.com/imrandevbd"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/auth": "^10.48|^11.0|^12.0|^13.0",
+        "illuminate/cache": "^10.48|^11.0|^12.0|^13.0",
+        "illuminate/console": "^10.48|^11.0|^12.0|^13.0",
+        "illuminate/contracts": "^10.48|^11.0|^12.0|^13.0",
+        "illuminate/database": "^10.48|^11.0|^12.0|^13.0",
+        "illuminate/events": "^10.48|^11.0|^12.0|^13.0",
+        "illuminate/support": "^10.48|^11.0|^12.0|^13.0",
+        "illuminate/view": "^10.48|^11.0|^12.0|^13.0",
+        "laravel/prompts": "^0.1.25|^0.3"
+    },
+    "require-dev": {
+        "larastan/larastan": "^2.9|^3.0",
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^8.36|^9.0|^10.0|^11.0",
+        "pestphp/pest": "^2.36|^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^2.4|^3.0|^4.0"
+    },
+    "suggest": {
+        "filament/filament": "Required for the Role Matrix admin UI. Supports ^3.2 and ^4.0.",
+        "spatie/laravel-permission": "Optional mirror. Set role-matrix.engine to spatie and prefix Role Matrix tables before enabling it."
+    },
+    "autoload": {
+        "psr-4": {
+            "ImranDevBD\\RoleMatrix\\": "src/",
+            "ImranDevBD\\RoleMatrix\\Database\\Factories\\": "database/factories/",
+            "ImranDevBD\\RoleMatrix\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ImranDevBD\\RoleMatrix\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ImranDevBD\\RoleMatrix\\RoleMatrixServiceProvider"
+            ],
+            "aliases": {
+                "RoleMatrix": "ImranDevBD\\RoleMatrix\\Facades\\RoleMatrix"
+            }
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "format": "pint --test",
+        "format:fix": "pint",
+        "serve": "ROLE_MATRIX_DEMO=true @php vendor/bin/testbench serve --no-reload"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

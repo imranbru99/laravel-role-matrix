@@ -1,0 +1,9 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan.neon
+
+parameters:
+    excludePaths: []
+    paths:
+        - src
+    ignoreErrors: []

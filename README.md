@@ -122,6 +122,32 @@ Route::post('/invoices/{invoice}/approve', ApproveInvoice::class)
 
 Aliases: `role`, `permission`, `role_or_permission`, `matrix`, `role-matrix.team`.
 
+```blade
+@role('manager') ... @endrole
+@hasanyrole('manager', 'staff') ... @endhasanyrole
+@hasallroles('manager', 'staff') ... @endhasallroles
+@permission('inventory.view', $record) ... @endpermission
+@anypermission('inventory.view', 'inventory.export') ... @endanypermission
+@canmatrix('invoices.approve', $invoice) ... @endcanmatrix
+@superadmin ... @endsuperadmin
+```
+
+Generate a backed enum after syncing modules:
+
+```bash
+php artisan role-matrix:make-permission-enum
+```
+
+```php
+use App\RoleMatrix\Permission;
+
+$user->hasPermissionTo(Permission::InventoryView);
+```
+
+The optional JSON API is off until `ROLE_MATRIX_API=true`. It serves `GET /api/role-matrix/roles`, `GET /api/role-matrix/permissions`, and `POST /api/role-matrix/explain`. The caller must be a super admin or hold `role-matrix.view`.
+
+Keys default to integers. Set `ROLE_MATRIX_KEY_TYPE` to `ulid` or `uuid` before migrating. Set `ROLE_MATRIX_TABLE_PREFIX` when the table names would collide with another package.
+
 ## Filament
 
 ```php
@@ -134,7 +160,21 @@ RoleMatrixPlugin::make()
     ->roleResource(CustomRoleResource::class);
 ```
 
-Version differences sit behind `FilamentVersionAdapter`. The matrix holds edits in the browser and saves them in one request. Super Admin columns are locked in the UI and in the service layer.
+Version differences sit behind `FilamentVersionAdapter`. The matrix holds edits in the browser and saves them in one request. Super Admin columns are locked in the UI and in the service layer. Focus mode edits one role as cards. The condition drawer builds ownership, team, status, amount, time, IP, and attribute rules field by field.
+
+Drop these into a Filament user table:
+
+```php
+use ImranDevBD\RoleMatrix\Filament\Actions\AssignRolesAction;
+use ImranDevBD\RoleMatrix\Filament\Tables\RolesColumn;
+use ImranDevBD\RoleMatrix\Filament\Tables\RolesFilter;
+
+RolesColumn::make();
+RolesFilter::make();
+AssignRolesAction::make();
+```
+
+The same plugin also registers the audit log, import/export page, and access debugger. `role-matrix:doctor` reports a missing super admin, unsynced modules, orphan permissions, hierarchy cycles, and guard mismatches.
 
 ## Guards, teams, cache
 
@@ -156,6 +196,7 @@ Set `ROLE_MATRIX_NOTIFY_MAIL` or `ROLE_MATRIX_SLACK_WEBHOOK` to send the bundled
 | `role-matrix:sync-permissions` | Create permissions from the registry (`--dry-run`, `--prune`, `--guard`) |
 | `role-matrix:create-super-admin` | Create a user and attach the protected role |
 | `role-matrix:make-module` | Scaffold a module class |
+| `role-matrix:make-permission-enum` | Write `App\RoleMatrix\Permission` from the registry |
 | `role-matrix:make-policy` | Scaffold a policy that extends `BasePolicy` |
 | `role-matrix:cache` / `role-matrix:cache:clear` | Warm or drop the registry and permission cache |
 | `role-matrix:export` / `role-matrix:import` | JSON with checksum. Modes: `merge`, `replace`, `dry-run` |
@@ -203,4 +244,4 @@ composer format
 
 ## License
 
-MIT. Copyright Imran Ahmed.
+MIT. Copyright Imran Ahmed. Version 1.1.0.

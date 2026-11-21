@@ -141,6 +141,7 @@
         <h2>{{ __('role-matrix::ui.conditions') }}</h2>
         <p>{{ __('role-matrix::ui.condition_help') }}</p>
         <div class="rm-actions" data-rm-builder></div>
+        <div data-rm-fields></div>
         <p data-rm-readable></p>
         <textarea data-rm-summary rows="12" style="width:100%"></textarea>
         <div class="rm-actions">

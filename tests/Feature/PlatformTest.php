@@ -182,6 +182,12 @@ it('syncs from the registry idempotently and the doctor reports a super admin', 
     $this->artisan('role-matrix:doctor', ['--json' => true])->assertSuccessful();
     $this->artisan('role-matrix:list-roles', ['--json' => true])->assertSuccessful();
     $this->artisan('role-matrix:cache:clear')->assertSuccessful();
+
+    $path = sys_get_temp_dir().'/role-matrix-permission-enum.php';
+    $this->artisan('role-matrix:make-permission-enum', ['--path' => $path, '--force' => true, '--guard' => 'web'])
+        ->assertSuccessful();
+    expect(file_get_contents($path))->toContain("case WarehouseView = 'warehouse.view'");
+    unlink($path);
 });
 
 it('renders the matrix from one payload', function () {

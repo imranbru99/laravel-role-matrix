@@ -8,7 +8,7 @@ use ImranDevBD\RoleMatrix\Enums\KeyType;
 
 final class RoleMatrixConfig
 {
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.1.0';
 
     public const SCHEMA = 'role-matrix/1';
 

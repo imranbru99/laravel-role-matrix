@@ -16,7 +16,7 @@ use ImranDevBD\RoleMatrix\Support\TeamContext;
 
 final class RoleMatrix
 {
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.1.0';
 
     public function __construct(
         private readonly ModuleRegistry $registry,

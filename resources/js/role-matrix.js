@@ -186,12 +186,14 @@
             }
             if (button.dataset.rmView) {
                 const focusMode = button.dataset.rmView === 'focus';
-                const roleId = root.querySelector('[data-rm-focus-role]')?.value || '';
-                root.querySelectorAll('[data-role-col]').forEach((cell) => {
-                    cell.hidden = focusMode && roleId !== '' && cell.dataset.roleCol !== roleId;
-                });
+                const columns = root.querySelector('[data-rm-columns]');
+                if (columns) columns.hidden = focusMode;
+                if (focus) {
+                    focus.hidden = !focusMode;
+                    if (focusMode) renderFocus();
+                    else focus.replaceChildren();
+                }
                 localStorage.setItem('role-matrix-view', button.dataset.rmView);
-                localStorage.setItem('role-matrix-focus-role', roleId);
             }
             if (button.dataset.column && button.dataset.action) {
                 const roleId = button.dataset.column;
@@ -228,6 +230,9 @@
         });
 
         root.querySelector('[data-rm-search]')?.addEventListener('input', applyFilter);
+        root.querySelector('[data-rm-focus-role]')?.addEventListener('change', () => {
+            if (focus && !focus.hidden) renderFocus();
+        });
         root.querySelector('[data-rm-compare-a]')?.addEventListener('change', compareRoles);
         root.querySelector('[data-rm-compare-b]')?.addEventListener('change', compareRoles);
 
@@ -243,6 +248,37 @@
                     input.closest('td')?.classList.add('rm-diff');
                 });
             });
+        }
+
+        function renderFocus() {
+            if (!focus) return;
+            const roleId = root.querySelector('[data-rm-focus-role]')?.value || (payload.roles[0] && payload.roles[0].id) || '';
+            focus.replaceChildren();
+            (payload.groups || []).forEach((group) => {
+                (group.modules || []).forEach((module) => {
+                    const card = document.createElement('article');
+                    card.className = 'rm-card';
+                    const title = document.createElement('strong');
+                    title.textContent = module.label;
+                    card.append(title);
+                    (module.actions || []).forEach((action) => {
+                        const label = document.createElement('label');
+                        const input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.className = 'rm-check';
+                        input.dataset.grant = action.key;
+                        input.dataset.role = roleId;
+                        input.dataset.module = module.slug;
+                        const role = payload.roles.find((item) => item.id === roleId);
+                        input.dataset.locked = role && role.locked ? '1' : '0';
+                        input.disabled = input.dataset.locked === '1';
+                        label.append(input, document.createTextNode(' ' + action.label));
+                        card.append(label);
+                    });
+                    focus.append(card);
+                });
+            });
+            paint();
         }
 
         function openConfirm() {
@@ -291,8 +327,10 @@
 
         function renderBuilder() {
             const box = root.querySelector('[data-rm-builder]');
+            const fields = root.querySelector('[data-rm-fields]');
             const readable = root.querySelector('[data-rm-readable]');
-            if (!box) return;
+            const summary = root.querySelector('[data-rm-summary]');
+            if (!box || !summary) return;
             box.replaceChildren();
             const select = document.createElement('select');
             select.className = 'rm-select';
@@ -302,25 +340,87 @@
                 option.textContent = rule.label;
                 select.appendChild(option);
             });
+            const bucket = document.createElement('select');
+            bucket.className = 'rm-select';
+            ['all', 'any'].forEach((name) => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                bucket.appendChild(option);
+            });
             const add = document.createElement('button');
             add.type = 'button';
             add.className = 'rm-btn';
             add.textContent = text('apply');
             add.addEventListener('click', () => {
-                let parsed = { all: [], any: [] };
-                try { parsed = JSON.parse(root.querySelector('[data-rm-summary]').value || '{}'); } catch (error) { parsed = { all: [], any: [] }; }
-                parsed.all = Array.isArray(parsed.all) ? parsed.all : [];
+                const parsed = readConditions();
                 const rule = (payload.rules || []).find((item) => item.type === select.value) || { fields: [] };
                 const config = { rule: select.value };
                 (rule.fields || []).forEach((field) => { config[field.name] = field.default ?? ''; });
-                parsed.all.push(config);
-                root.querySelector('[data-rm-summary]').value = JSON.stringify(parsed, null, 2);
-                if (readable) readable.textContent = describe(parsed);
+                parsed[bucket.value] = Array.isArray(parsed[bucket.value]) ? parsed[bucket.value] : [];
+                parsed[bucket.value].push(config);
+                writeConditions(parsed);
             });
-            box.append(select, add);
-            if (readable) {
-                try { readable.textContent = describe(JSON.parse(root.querySelector('[data-rm-summary]').value || '{}')); }
-                catch (error) { readable.textContent = ''; }
+            box.append(select, bucket, add);
+            writeConditions(readConditions());
+
+            function readConditions() {
+                try {
+                    const parsed = JSON.parse(summary.value || '{}');
+                    return { all: parsed.all || [], any: parsed.any || [] };
+                } catch (error) {
+                    return { all: [], any: [] };
+                }
+            }
+
+            function writeConditions(parsed) {
+                summary.value = JSON.stringify(parsed, null, 2);
+                if (readable) readable.textContent = describe(parsed);
+                if (!fields) return;
+                fields.replaceChildren();
+                ['all', 'any'].forEach((name) => {
+                    (parsed[name] || []).forEach((rule, index) => {
+                        const known = (payload.rules || []).find((item) => item.type === rule.rule);
+                        const block = document.createElement('div');
+                        block.className = 'rm-card';
+                        const heading = document.createElement('strong');
+                        heading.textContent = (known ? known.label : rule.rule) + ' (' + name + ')';
+                        block.append(heading);
+                        (known && known.fields ? known.fields : []).forEach((field) => {
+                            const label = document.createElement('label');
+                            label.append(document.createTextNode(field.label || field.name));
+                            const input = field.type === 'toggle' ? document.createElement('input') : document.createElement(field.type === 'select' ? 'select' : 'input');
+                            if (field.type === 'toggle') input.type = 'checkbox';
+                            if (field.type === 'select') {
+                                Object.entries(field.options || {}).forEach(([value, caption]) => {
+                                    const option = document.createElement('option');
+                                    option.value = value;
+                                    option.textContent = caption;
+                                    input.append(option);
+                                });
+                            }
+                            if (field.type === 'toggle') input.checked = !!rule[field.name];
+                            else input.value = rule[field.name] ?? '';
+                            input.addEventListener('change', () => {
+                                rule[field.name] = field.type === 'toggle' ? input.checked : input.value;
+                                summary.value = JSON.stringify(parsed, null, 2);
+                                if (readable) readable.textContent = describe(parsed);
+                            });
+                            label.append(input);
+                            block.append(label);
+                        });
+                        const remove = document.createElement('button');
+                        remove.type = 'button';
+                        remove.className = 'rm-btn';
+                        remove.textContent = text('discard');
+                        remove.addEventListener('click', () => {
+                            parsed[name].splice(index, 1);
+                            writeConditions(parsed);
+                        });
+                        block.append(remove);
+                        fields.append(block);
+                    });
+                });
             }
         }
 

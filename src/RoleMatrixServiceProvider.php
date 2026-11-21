@@ -290,6 +290,7 @@ final class RoleMatrixServiceProvider extends ServiceProvider
             Console\Commands\SyncPermissionsCommand::class,
             Console\Commands\CreateSuperAdminCommand::class,
             Console\Commands\MakeModuleCommand::class,
+            Console\Commands\MakePermissionEnumCommand::class,
             Console\Commands\MakePolicyCommand::class,
             Console\Commands\CacheCommand::class,
             Console\Commands\CacheClearCommand::class,
